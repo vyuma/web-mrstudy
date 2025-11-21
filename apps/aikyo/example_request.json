@@ -1,0 +1,13 @@
+{
+  "topic": "messages",
+  "body": {
+    "method": "message.send",
+    "jsonrpc": "2.0",
+    "params": {
+      "id": "b21df0a5-1843-46d2-8d48-43cefcdc7465",
+      "message": "こんにちは",
+      "from": "user",
+      "to": ["companion_kyoko"]
+    }
+  }
+}
