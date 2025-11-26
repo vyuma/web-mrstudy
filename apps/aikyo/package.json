@@ -1,0 +1,27 @@
+{
+  "name": "aikyo",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx --env-file .env ./src/index.ts",
+    "dev:debug": "DEBUG=libp2p:* pnpm run dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.15.1",
+  "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.17",
+    "@aikyo/firehose": "^1.5.6",
+    "@aikyo/server": "^1.4.6",
+    "@aikyo/utils": "^1.4.7",
+    "ai": "5.0.76",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.3"
+  }
+}
