@@ -1,6 +1,9 @@
+import type { Client } from "openapi-fetch";
 import createClient from "openapi-fetch";
+import type { Mock } from "vitest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Coeiroink, type Speaker } from "./coeiroink";
+import { type ApiSpeakerResponse, Coeiroink, type Speaker } from "./coeiroink";
+import type { paths } from "./types/coeiroinkSchema";
 
 // Mock openapi-fetch module
 vi.mock("openapi-fetch");
@@ -10,8 +13,8 @@ const mockSpeaker: Speaker = {
   name: "Test Speaker",
   UUID: "550e8400-e29b-41d4-a716-446655440000",
   styles: [
-    { styleName: "Default", styleID: 0 },
-    { styleName: "Happy", styleID: 1 },
+    { styleName: "Default", styleId: 0 },
+    { styleName: "Happy", styleId: 1 },
   ],
 };
 
@@ -35,13 +38,13 @@ const mockSpeakers: Speaker[] = [
   {
     name: "Another Speaker",
     UUID: "660e8400-e29b-41d4-a716-446655440001",
-    styles: [{ styleName: "Normal", styleID: 0 }],
+    styles: [{ styleName: "Normal", styleId: 0 }],
   },
 ];
 
 describe("Coeiroink", () => {
-  let mockClient: { GET: any; POST: any };
-  let mockCreateClient: any;
+  let mockClient: { GET: Mock; POST: Mock };
+  let mockCreateClient: ReturnType<typeof vi.mocked<typeof createClient>>;
 
   beforeEach(() => {
     // Clear all mocks before each test
@@ -55,7 +58,9 @@ describe("Coeiroink", () => {
 
     // Mock createClient to return our mock client
     mockCreateClient = vi.mocked(createClient);
-    mockCreateClient.mockReturnValue(mockClient);
+    mockCreateClient.mockReturnValue(
+      mockClient as Client<paths, `${string}/${string}`>,
+    );
   });
 
   afterEach(() => {
@@ -144,7 +149,7 @@ describe("Coeiroink", () => {
         headers: { "Content-Type": "application/json" },
         body: {
           speakerUuid: mockSpeaker.UUID,
-          styleId: mockSpeaker.styles[0].styleID,
+          styleId: mockSpeaker.styles[0].styleId,
           text: "Hello world",
           speedScale: 1.0,
           volumeScale: 1.0,
@@ -180,7 +185,7 @@ describe("Coeiroink", () => {
         "/v1/synthesis",
         expect.objectContaining({
           body: expect.objectContaining({
-            styleId: mockSpeaker.styles[1].styleID,
+            styleId: mockSpeaker.styles[1].styleId,
           }),
         }),
       );
@@ -252,8 +257,29 @@ describe("Coeiroink", () => {
 
   describe("getSpeakers", () => {
     it("should successfully retrieve speakers list", async () => {
+      // APIレスポンス形式のモックデータ
+      const mockApiResponse: ApiSpeakerResponse = [
+        {
+          speakerName: "Test Speaker",
+          speakerUuid: "550e8400-e29b-41d4-a716-446655440000",
+          styles: [
+            { styleName: "Default", styleId: 0, base64Icon: "" },
+            { styleName: "Happy", styleId: 1, base64Icon: "" },
+          ],
+          base64Portrait: "base64encodedstring",
+          version: "1.0.0",
+        },
+        {
+          speakerName: "Another Speaker",
+          speakerUuid: "660e8400-e29b-41d4-a716-446655440001",
+          styles: [{ styleName: "Normal", styleId: 0, base64Icon: "" }],
+          base64Portrait: "base64encodedstring2",
+          version: "1.0.0",
+        },
+      ];
+
       mockClient.GET.mockResolvedValue({
-        data: mockSpeakers,
+        data: mockApiResponse,
         error: undefined,
       });
 
@@ -285,9 +311,11 @@ describe("Coeiroink", () => {
     it("should throw ZodError when speaker UUID is invalid", async () => {
       const invalidData = [
         {
-          name: "Invalid Speaker",
-          UUID: "not-a-uuid",
-          styles: [{ styleName: "Normal", styleID: 0 }],
+          speakerName: "Invalid Speaker",
+          speakerUuid: "not-a-uuid",
+          styles: [{ styleName: "Normal", styleId: 0, base64Icon: "" }],
+          base64Portrait: "base64encodedstring",
+          version: "1.0.0",
         },
       ];
 
@@ -306,9 +334,11 @@ describe("Coeiroink", () => {
     it("should throw ZodError when required fields are missing", async () => {
       const invalidData = [
         {
-          name: "Invalid Speaker",
-          // Missing UUID
-          styles: [{ styleName: "Normal", styleID: 0 }],
+          speakerName: "Invalid Speaker",
+          // Missing speakerUuid
+          styles: [{ styleName: "Normal", styleId: 0, base64Icon: "" }],
+          base64Portrait: "base64encodedstring",
+          version: "1.0.0",
         },
       ];
 
@@ -327,14 +357,17 @@ describe("Coeiroink", () => {
     it("should throw ZodError when styles array is invalid", async () => {
       const invalidData = [
         {
-          name: "Invalid Speaker",
-          UUID: "550e8400-e29b-41d4-a716-446655440000",
+          speakerName: "Invalid Speaker",
+          speakerUuid: "550e8400-e29b-41d4-a716-446655440000",
           styles: [
             {
               styleName: "Normal",
-              styleID: "not-a-number", // Should be number
+              styleId: "not-a-number", // Should be number
+              base64Icon: "",
             },
           ],
+          base64Portrait: "base64encodedstring",
+          version: "1.0.0",
         },
       ];
 
@@ -417,7 +450,7 @@ describe("Coeiroink", () => {
       const newSpeaker: Speaker = {
         name: "New Speaker",
         UUID: "770e8400-e29b-41d4-a716-446655440002",
-        styles: [{ styleName: "Excited", styleID: 2 }],
+        styles: [{ styleName: "Excited", styleId: 2 }],
       };
 
       const coeiroink = new Coeiroink({
@@ -437,7 +470,7 @@ describe("Coeiroink", () => {
       const newSpeaker: Speaker = {
         name: "New Speaker",
         UUID: "770e8400-e29b-41d4-a716-446655440002",
-        styles: [{ styleName: "Excited", styleID: 2 }],
+        styles: [{ styleName: "Excited", styleId: 2 }],
       };
 
       const coeiroink = new Coeiroink({
@@ -452,7 +485,7 @@ describe("Coeiroink", () => {
         expect.objectContaining({
           body: expect.objectContaining({
             speakerUuid: newSpeaker.UUID,
-            styleId: newSpeaker.styles[0].styleID,
+            styleId: newSpeaker.styles[0].styleId,
           }),
         }),
       );

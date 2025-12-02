@@ -74,13 +74,13 @@ export class Coeiroink implements TTS<Speaker> {
     const { data, error } = await this.client.GET("/v1/speakers");
 
     if (error) {
-      console.error(`COEIROINK getSpeaker Error: ${error}`);
+      console.error(`COEIROINK getSpeakers Error: ${error}`);
       throw error;
     }
 
     if (data) {
       // APIレスポンスを既存の型にマッピング
-      const apiData = data as ApiSpeakerResponse;
+      const apiData: ApiSpeakerResponse = data;
       const mappedData = apiData.map((apiSpeaker) => ({
         name: apiSpeaker.speakerName,
         UUID: apiSpeaker.speakerUuid,
