@@ -1,36 +1,45 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Coeiroink, speaker, type Speaker } from './coeiroink';
-import createClient from 'openapi-fetch';
+import createClient from "openapi-fetch";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Coeiroink, type Speaker } from "./coeiroink";
 
 // Mock openapi-fetch module
-vi.mock('openapi-fetch');
+vi.mock("openapi-fetch");
 
 // Mock data
 const mockSpeaker: Speaker = {
-  name: 'Test Speaker',
-  UUID: '550e8400-e29b-41d4-a716-446655440000',
+  name: "Test Speaker",
+  UUID: "550e8400-e29b-41d4-a716-446655440000",
   styles: [
-    { styleName: 'Default', styleID: 0 },
-    { styleName: 'Happy', styleID: 1 },
+    { styleName: "Default", styleID: 0 },
+    { styleName: "Happy", styleID: 1 },
   ],
 };
 
 const mockAudioData = new Uint8Array([
-  0x52, 0x49, 0x46, 0x46, // "RIFF"
-  0x24, 0x00, 0x00, 0x00, // File size
-  0x57, 0x41, 0x56, 0x45, // "WAVE"
+  0x52,
+  0x49,
+  0x46,
+  0x46, // "RIFF"
+  0x24,
+  0x00,
+  0x00,
+  0x00, // File size
+  0x57,
+  0x41,
+  0x56,
+  0x45, // "WAVE"
 ]);
 
 const mockSpeakers: Speaker[] = [
   mockSpeaker,
   {
-    name: 'Another Speaker',
-    UUID: '660e8400-e29b-41d4-a716-446655440001',
-    styles: [{ styleName: 'Normal', styleID: 0 }],
+    name: "Another Speaker",
+    UUID: "660e8400-e29b-41d4-a716-446655440001",
+    styles: [{ styleName: "Normal", styleID: 0 }],
   },
 ];
 
-describe('Coeiroink', () => {
+describe("Coeiroink", () => {
   let mockClient: { GET: any; POST: any };
   let mockCreateClient: any;
 
@@ -54,9 +63,9 @@ describe('Coeiroink', () => {
     vi.restoreAllMocks();
   });
 
-  describe('constructor', () => {
-    it('should initialize with custom apiUrl', () => {
-      const customUrl = 'http://custom-api.example.com:8080';
+  describe("constructor", () => {
+    it("should initialize with custom apiUrl", () => {
+      const customUrl = "http://custom-api.example.com:8080";
       new Coeiroink({
         apiUrl: customUrl,
         speaker: mockSpeaker,
@@ -67,8 +76,8 @@ describe('Coeiroink', () => {
       });
     });
 
-    it('should use COEIROINK_API_URL environment variable when apiUrl not provided', () => {
-      const envUrl = 'http://env-api.example.com:9000';
+    it("should use COEIROINK_API_URL environment variable when apiUrl not provided", () => {
+      const envUrl = "http://env-api.example.com:9000";
       process.env.COEIROINK_API_URL = envUrl;
 
       new Coeiroink({
@@ -82,7 +91,7 @@ describe('Coeiroink', () => {
       delete process.env.COEIROINK_API_URL;
     });
 
-    it('should use default URL when neither apiUrl nor env variable provided', () => {
+    it("should use default URL when neither apiUrl nor env variable provided", () => {
       delete process.env.COEIROINK_API_URL;
 
       new Coeiroink({
@@ -90,11 +99,11 @@ describe('Coeiroink', () => {
       });
 
       expect(mockCreateClient).toHaveBeenCalledWith({
-        baseUrl: 'http://127.0.0.1:50032',
+        baseUrl: "http://127.0.0.1:50032",
       });
     });
 
-    it('should store the provided speaker', async () => {
+    it("should store the provided speaker", async () => {
       mockClient.POST.mockResolvedValue({
         data: mockAudioData,
         error: undefined,
@@ -104,11 +113,11 @@ describe('Coeiroink', () => {
         speaker: mockSpeaker,
       });
 
-      await coeiroink.speak('Test');
+      await coeiroink.speak("Test");
 
       // Verify speaker is used in API call
       expect(mockClient.POST).toHaveBeenCalledWith(
-        '/v1/synthesis',
+        "/v1/synthesis",
         expect.objectContaining({
           body: expect.objectContaining({
             speakerUuid: mockSpeaker.UUID,
@@ -118,8 +127,8 @@ describe('Coeiroink', () => {
     });
   });
 
-  describe('speak', () => {
-    it('should successfully synthesize speech with default style', async () => {
+  describe("speak", () => {
+    it("should successfully synthesize speech with default style", async () => {
       mockClient.POST.mockResolvedValue({
         data: mockAudioData,
         error: undefined,
@@ -129,14 +138,14 @@ describe('Coeiroink', () => {
         speaker: mockSpeaker,
       });
 
-      const result = await coeiroink.speak('Hello world');
+      const result = await coeiroink.speak("Hello world");
 
-      expect(mockClient.POST).toHaveBeenCalledWith('/v1/synthesis', {
-        headers: { 'Content-Type': 'application/json' },
+      expect(mockClient.POST).toHaveBeenCalledWith("/v1/synthesis", {
+        headers: { "Content-Type": "application/json" },
         body: {
           speakerUuid: mockSpeaker.UUID,
           styleId: mockSpeaker.styles[0].styleID,
-          text: 'Hello world',
+          text: "Hello world",
           speedScale: 1.0,
           volumeScale: 1.0,
           pitchScale: 0.0,
@@ -155,7 +164,7 @@ describe('Coeiroink', () => {
       expect(Buffer.from(result)).toEqual(Buffer.from(mockAudioData));
     });
 
-    it('should use specified style index', async () => {
+    it("should use specified style index", async () => {
       mockClient.POST.mockResolvedValue({
         data: mockAudioData,
         error: undefined,
@@ -165,10 +174,10 @@ describe('Coeiroink', () => {
         speaker: mockSpeaker,
       });
 
-      await coeiroink.speak('Hello world', 1);
+      await coeiroink.speak("Hello world", 1);
 
       expect(mockClient.POST).toHaveBeenCalledWith(
-        '/v1/synthesis',
+        "/v1/synthesis",
         expect.objectContaining({
           body: expect.objectContaining({
             styleId: mockSpeaker.styles[1].styleID,
@@ -177,8 +186,8 @@ describe('Coeiroink', () => {
       );
     });
 
-    it('should throw error when API returns error', async () => {
-      const mockError = { message: 'API Error', status: 500 };
+    it("should throw error when API returns error", async () => {
+      const mockError = { message: "API Error", status: 500 };
       mockClient.POST.mockResolvedValue({
         data: undefined,
         error: mockError,
@@ -188,10 +197,10 @@ describe('Coeiroink', () => {
         speaker: mockSpeaker,
       });
 
-      await expect(coeiroink.speak('Hello')).rejects.toEqual(mockError);
+      await expect(coeiroink.speak("Hello")).rejects.toEqual(mockError);
     });
 
-    it('should throw error when both data and error are undefined', async () => {
+    it("should throw error when both data and error are undefined", async () => {
       mockClient.POST.mockResolvedValue({
         data: undefined,
         error: undefined,
@@ -201,27 +210,27 @@ describe('Coeiroink', () => {
         speaker: mockSpeaker,
       });
 
-      await expect(coeiroink.speak('Hello')).rejects.toThrow(
-        'Unexpected API response: both data and error are undefined',
+      await expect(coeiroink.speak("Hello")).rejects.toThrow(
+        "Unexpected API response: both data and error are undefined",
       );
     });
 
-    it('should propagate network errors', async () => {
-      const networkError = new Error('Network failure');
+    it("should propagate network errors", async () => {
+      const networkError = new Error("Network failure");
       mockClient.POST.mockRejectedValue(networkError);
 
       const coeiroink = new Coeiroink({
         speaker: mockSpeaker,
       });
 
-      await expect(coeiroink.speak('Hello')).rejects.toThrow('Network failure');
+      await expect(coeiroink.speak("Hello")).rejects.toThrow("Network failure");
     });
 
-    it('should log error to console when API returns error', async () => {
+    it("should log error to console when API returns error", async () => {
       const consoleErrorSpy = vi
-        .spyOn(console, 'error')
+        .spyOn(console, "error")
         .mockImplementation(() => {});
-      const mockError = { message: 'API Error' };
+      const mockError = { message: "API Error" };
 
       mockClient.POST.mockResolvedValue({
         data: undefined,
@@ -232,17 +241,17 @@ describe('Coeiroink', () => {
         speaker: mockSpeaker,
       });
 
-      await expect(coeiroink.speak('Hello')).rejects.toEqual(mockError);
+      await expect(coeiroink.speak("Hello")).rejects.toEqual(mockError);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('COEIROINK speak Error'),
+        expect.stringContaining("COEIROINK speak Error"),
       );
 
       consoleErrorSpy.mockRestore();
     });
   });
 
-  describe('getSpeakers', () => {
-    it('should successfully retrieve speakers list', async () => {
+  describe("getSpeakers", () => {
+    it("should successfully retrieve speakers list", async () => {
       mockClient.GET.mockResolvedValue({
         data: mockSpeakers,
         error: undefined,
@@ -254,13 +263,13 @@ describe('Coeiroink', () => {
 
       const result = await coeiroink.getSpeakers();
 
-      expect(mockClient.GET).toHaveBeenCalledWith('/v1/speakers');
+      expect(mockClient.GET).toHaveBeenCalledWith("/v1/speakers");
       expect(result).toEqual(mockSpeakers);
       expect(result).toHaveLength(2);
     });
 
-    it('should throw error when API returns error', async () => {
-      const mockError = { message: 'Failed to fetch speakers', status: 404 };
+    it("should throw error when API returns error", async () => {
+      const mockError = { message: "Failed to fetch speakers", status: 404 };
       mockClient.GET.mockResolvedValue({
         data: undefined,
         error: mockError,
@@ -273,12 +282,12 @@ describe('Coeiroink', () => {
       await expect(coeiroink.getSpeakers()).rejects.toEqual(mockError);
     });
 
-    it('should throw ZodError when speaker UUID is invalid', async () => {
+    it("should throw ZodError when speaker UUID is invalid", async () => {
       const invalidData = [
         {
-          name: 'Invalid Speaker',
-          UUID: 'not-a-uuid',
-          styles: [{ styleName: 'Normal', styleID: 0 }],
+          name: "Invalid Speaker",
+          UUID: "not-a-uuid",
+          styles: [{ styleName: "Normal", styleID: 0 }],
         },
       ];
 
@@ -294,12 +303,12 @@ describe('Coeiroink', () => {
       await expect(coeiroink.getSpeakers()).rejects.toThrow();
     });
 
-    it('should throw ZodError when required fields are missing', async () => {
+    it("should throw ZodError when required fields are missing", async () => {
       const invalidData = [
         {
-          name: 'Invalid Speaker',
+          name: "Invalid Speaker",
           // Missing UUID
-          styles: [{ styleName: 'Normal', styleID: 0 }],
+          styles: [{ styleName: "Normal", styleID: 0 }],
         },
       ];
 
@@ -315,15 +324,15 @@ describe('Coeiroink', () => {
       await expect(coeiroink.getSpeakers()).rejects.toThrow();
     });
 
-    it('should throw ZodError when styles array is invalid', async () => {
+    it("should throw ZodError when styles array is invalid", async () => {
       const invalidData = [
         {
-          name: 'Invalid Speaker',
-          UUID: '550e8400-e29b-41d4-a716-446655440000',
+          name: "Invalid Speaker",
+          UUID: "550e8400-e29b-41d4-a716-446655440000",
           styles: [
             {
-              styleName: 'Normal',
-              styleID: 'not-a-number', // Should be number
+              styleName: "Normal",
+              styleID: "not-a-number", // Should be number
             },
           ],
         },
@@ -341,7 +350,7 @@ describe('Coeiroink', () => {
       await expect(coeiroink.getSpeakers()).rejects.toThrow();
     });
 
-    it('should throw error when both data and error are undefined', async () => {
+    it("should throw error when both data and error are undefined", async () => {
       mockClient.GET.mockResolvedValue({
         data: undefined,
         error: undefined,
@@ -352,15 +361,15 @@ describe('Coeiroink', () => {
       });
 
       await expect(coeiroink.getSpeakers()).rejects.toThrow(
-        'Unexpected API response: both data and error are undefined',
+        "Unexpected API response: both data and error are undefined",
       );
     });
 
-    it('should log error to console when API returns error', async () => {
+    it("should log error to console when API returns error", async () => {
       const consoleErrorSpy = vi
-        .spyOn(console, 'error')
+        .spyOn(console, "error")
         .mockImplementation(() => {});
-      const mockError = { message: 'API Error' };
+      const mockError = { message: "API Error" };
 
       mockClient.GET.mockResolvedValue({
         data: undefined,
@@ -373,19 +382,17 @@ describe('Coeiroink', () => {
 
       await expect(coeiroink.getSpeakers()).rejects.toEqual(mockError);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('COEIROINK getSpeaker Error'),
+        expect.stringContaining("COEIROINK getSpeaker Error"),
       );
 
       consoleErrorSpy.mockRestore();
     });
 
-    it('should log error to console when Zod validation fails', async () => {
+    it("should log error to console when Zod validation fails", async () => {
       const consoleErrorSpy = vi
-        .spyOn(console, 'error')
+        .spyOn(console, "error")
         .mockImplementation(() => {});
-      const invalidData = [
-        { name: 'Invalid', UUID: 'not-a-uuid', styles: [] },
-      ];
+      const invalidData = [{ name: "Invalid", UUID: "not-a-uuid", styles: [] }];
 
       mockClient.GET.mockResolvedValue({
         data: invalidData,
@@ -398,19 +405,19 @@ describe('Coeiroink', () => {
 
       await expect(coeiroink.getSpeakers()).rejects.toThrow();
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('COEIROINK getSpeakers Error'),
+        expect.stringContaining("COEIROINK getSpeakers Error"),
       );
 
       consoleErrorSpy.mockRestore();
     });
   });
 
-  describe('setSpeaker', () => {
-    it('should update the speaker', () => {
+  describe("setSpeaker", () => {
+    it("should update the speaker", () => {
       const newSpeaker: Speaker = {
-        name: 'New Speaker',
-        UUID: '770e8400-e29b-41d4-a716-446655440002',
-        styles: [{ styleName: 'Excited', styleID: 2 }],
+        name: "New Speaker",
+        UUID: "770e8400-e29b-41d4-a716-446655440002",
+        styles: [{ styleName: "Excited", styleID: 2 }],
       };
 
       const coeiroink = new Coeiroink({
@@ -421,16 +428,16 @@ describe('Coeiroink', () => {
       coeiroink.setSpeaker(newSpeaker);
     });
 
-    it('should use new speaker in subsequent speak calls', async () => {
+    it("should use new speaker in subsequent speak calls", async () => {
       mockClient.POST.mockResolvedValue({
         data: mockAudioData,
         error: undefined,
       });
 
       const newSpeaker: Speaker = {
-        name: 'New Speaker',
-        UUID: '770e8400-e29b-41d4-a716-446655440002',
-        styles: [{ styleName: 'Excited', styleID: 2 }],
+        name: "New Speaker",
+        UUID: "770e8400-e29b-41d4-a716-446655440002",
+        styles: [{ styleName: "Excited", styleID: 2 }],
       };
 
       const coeiroink = new Coeiroink({
@@ -438,10 +445,10 @@ describe('Coeiroink', () => {
       });
 
       coeiroink.setSpeaker(newSpeaker);
-      await coeiroink.speak('Test');
+      await coeiroink.speak("Test");
 
       expect(mockClient.POST).toHaveBeenCalledWith(
-        '/v1/synthesis',
+        "/v1/synthesis",
         expect.objectContaining({
           body: expect.objectContaining({
             speakerUuid: newSpeaker.UUID,
