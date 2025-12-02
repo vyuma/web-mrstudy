@@ -10,11 +10,14 @@ export const speaker = z.object({
   styles: z
     .object({
       styleName: z.string(),
-      styleID: z.number(),
+      styleId: z.number(),
     })
     .array(),
 });
 export type Speaker = z.infer<typeof speaker>;
+
+export type ApiSpeakerResponse =
+  paths["/v1/speakers"]["get"]["responses"]["200"]["content"]["application/json"];
 
 export class Coeiroink implements TTS<Speaker> {
   private client: Client<paths, `${string}/${string}`>;
@@ -36,7 +39,7 @@ export class Coeiroink implements TTS<Speaker> {
       },
       body: {
         speakerUuid: this.speaker.UUID,
-        styleId: this.speaker.styles[style].styleID,
+        styleId: this.speaker.styles[style].styleId,
         text: text,
         speedScale: 1.0,
         volumeScale: 1.0,
@@ -76,7 +79,18 @@ export class Coeiroink implements TTS<Speaker> {
     }
 
     if (data) {
-      const response = z.array(speaker).safeParse(data);
+      // APIレスポンスを既存の型にマッピング
+      const apiData = data as ApiSpeakerResponse;
+      const mappedData = apiData.map((apiSpeaker) => ({
+        name: apiSpeaker.speakerName,
+        UUID: apiSpeaker.speakerUuid,
+        styles: apiSpeaker.styles.map((style) => ({
+          styleName: style.styleName,
+          styleId: style.styleId,
+        })),
+      }));
+
+      const response = z.array(speaker).safeParse(mappedData);
       if (!response.success) {
         console.error(`COEIROINK getSpeakers Error: ${response.error}`);
         throw response.error;
