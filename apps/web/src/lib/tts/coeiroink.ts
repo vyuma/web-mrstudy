@@ -32,7 +32,7 @@ export class Coeiroink implements TTS<Speaker> {
     this.speaker = options.speaker;
   }
 
-  async speak(text: string, style: number = 0): Promise<Buffer<ArrayBuffer>> {
+  async speak(text: string, style: number = 0): Promise<Buffer> {
     const { data, error } = await this.client.POST("/v1/synthesis", {
       headers: {
         "Content-Type": "application/json",
