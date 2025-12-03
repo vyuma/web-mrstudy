@@ -19,6 +19,13 @@ export class Voicevox implements TTS<Speaker> {
   }
 
   async speak(text: string, style: number = 0): Promise<Buffer> {
+    // 該当のstyle indexが存在するか確認
+    if (style < 0 || style >= this.speaker.styles.length) {
+      throw new Error(
+        `Invalid style index: ${style}. Available styles: 0-${this.speaker.styles.length - 1}`,
+      );
+    }
+
     // クエリの作成
     const { data: queryData, error: queryError } = await this.client.POST(
       "/audio_query",
