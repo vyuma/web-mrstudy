@@ -7,18 +7,23 @@ export type Speaker = components["schemas"]["Speaker"];
 
 export class Voicevox implements TTS<Speaker> {
   private client: Client<paths, `${string}/${string}`>;
-  private speaker: Speaker;
+  private speaker: Speaker | undefined;
 
-  constructor(options: { apiUrl?: string; speaker: Speaker }) {
+  constructor(options: { apiUrl?: string; speaker?: Speaker }) {
     this.client = createClient<paths>({
       baseUrl:
         (options.apiUrl ?? process.env.VOICEVOX_API_URL) ||
         "http://127.0.0.1:50021",
     });
-    this.speaker = options.speaker;
+    this.speaker = options.speaker ?? undefined;
   }
 
   async speak(text: string, style: number = 0): Promise<Buffer> {
+    // speakerが設定されているか確認
+    if (!this.speaker) {
+      throw new Error("Speaker is not set. Please call setSpeaker() first.");
+    }
+
     // 該当のstyle indexが存在するか確認
     if (style < 0 || style >= this.speaker.styles.length) {
       throw new Error(
@@ -34,8 +39,6 @@ export class Voicevox implements TTS<Speaker> {
           query: {
             text: text,
             speaker: this.speaker.styles[style].id,
-            enable_katakana_english: false,
-            core_version: "1.0.0",
           },
         },
       },
@@ -43,7 +46,9 @@ export class Voicevox implements TTS<Speaker> {
 
     // エラーが発生 / データを受け取れなかった
     if (queryError || !queryData) {
-      console.error(`VOICEVOX audio_query Error: ${queryError}`);
+      console.error(
+        `VOICEVOX audio_query Error: ${JSON.stringify(queryError, null, 2)}`,
+      );
       throw queryError ?? new Error("VOICEVOX returned no data");
     }
 
@@ -56,11 +61,14 @@ export class Voicevox implements TTS<Speaker> {
           },
         },
         body: queryData,
+        parseAs: "arrayBuffer",
       });
 
     // エラーが発生 / データを受け取れなかった
     if (synthesisError || !synthesisData) {
-      console.error(`VOICEVOX synthesis Error: ${synthesisError}`);
+      console.error(
+        `VOICEVOX synthesis Error: ${JSON.stringify(synthesisError, null, 2)}`,
+      );
       throw synthesisError ?? new Error("VOICEVOX returned no data");
     }
 
@@ -72,7 +80,9 @@ export class Voicevox implements TTS<Speaker> {
     const { data, error } = await this.client.GET("/speakers");
 
     if (error || !data) {
-      console.error(`VOICEVOX getSpeakers Error: ${error}`);
+      console.error(
+        `VOICEVOX getSpeakers Error: ${JSON.stringify(error, null, 2)}`,
+      );
       throw error ?? new Error("VOICEVOX returned no data");
     }
 

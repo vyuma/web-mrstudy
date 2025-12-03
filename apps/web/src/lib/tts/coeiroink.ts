@@ -7,7 +7,7 @@ export type Speaker = components["schemas"]["Speaker"];
 
 export class Coeiroink implements TTS<Speaker> {
   private client: Client<paths, `${string}/${string}`>;
-  private speaker: Speaker;
+  private speaker: Speaker | undefined;
 
   constructor(options: { apiUrl?: string; speaker: Speaker }) {
     this.client = createClient<paths>({
@@ -15,10 +15,15 @@ export class Coeiroink implements TTS<Speaker> {
         (options.apiUrl ?? process.env.COEIROINK_API_URL) ||
         "http://127.0.0.1:50032",
     });
-    this.speaker = options.speaker;
+    this.speaker = options.speaker ?? undefined;
   }
 
   async speak(text: string, style: number = 0): Promise<Buffer> {
+    // speakerが設定されているか確認
+    if (!this.speaker) {
+      throw new Error("Speaker is not set. Please call setSpeaker() first.");
+    }
+
     // 該当のstyle indexが存在するか確認
     if (style < 0 || style >= this.speaker.styles.length) {
       throw new Error(
@@ -46,6 +51,7 @@ export class Coeiroink implements TTS<Speaker> {
         pauseStartTrimBuffer: 0.0,
         pauseEndTrimBuffer: 0.0,
       },
+      parseAs: "arrayBuffer",
     });
 
     if (error || !data) {
