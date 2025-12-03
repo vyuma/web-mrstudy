@@ -50,7 +50,7 @@ export class Coeiroink implements TTS<Speaker> {
 
     if (error || !data) {
       console.error(`COEIROINK speak Error: ${error}`);
-      throw error;
+      throw error ?? new Error("COEIROINK returned no data");
     }
 
     const buffer = Buffer.from(data);
@@ -62,7 +62,7 @@ export class Coeiroink implements TTS<Speaker> {
 
     if (error || !data) {
       console.error(`COEIROINK getSpeakers Error: ${error}`);
-      throw error;
+      throw error ?? new Error("COEIROINK returned no data");
     }
 
     const mapped: Speaker[] = data.map((res) => ({

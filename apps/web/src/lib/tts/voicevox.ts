@@ -44,7 +44,7 @@ export class Voicevox implements TTS<Speaker> {
     // エラーが発生 / データを受け取れなかった
     if (queryError || !queryData) {
       console.error(`VOICEVOX audio_query Error: ${queryError}`);
-      throw queryError;
+      throw queryError ?? new Error("VOICEVOX returned no data");
     }
 
     // 音声合成
@@ -61,7 +61,7 @@ export class Voicevox implements TTS<Speaker> {
     // エラーが発生 / データを受け取れなかった
     if (synthesisError || !synthesisData) {
       console.error(`VOICEVOX synthesis Error: ${synthesisError}`);
-      throw synthesisError;
+      throw synthesisError ?? new Error("VOICEVOX returned no data");
     }
 
     const buffer = Buffer.from(synthesisData);
@@ -73,7 +73,7 @@ export class Voicevox implements TTS<Speaker> {
 
     if (error || !data) {
       console.error(`VOICEVOX getSpeakers Error: ${error}`);
-      throw error;
+      throw error ?? new Error("VOICEVOX returned no data");
     }
 
     return data as Speaker[];
