@@ -65,7 +65,7 @@ export class Voicevox implements TTS<Speaker> {
     const { data, error } = await this.client.GET("/speakers");
 
     if (error || !data) {
-      console.error(`COEIROINK getSpeakers Error: ${error}`);
+      console.error(`VOICEVOX getSpeakers Error: ${error}`);
       throw error;
     }
 
