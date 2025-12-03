@@ -1,23 +1,9 @@
 import type { Client } from "openapi-fetch";
 import createClient from "openapi-fetch";
-import * as z from "zod";
-import type { paths } from "./types/coeiroinkSchema";
+import type { components, paths } from "./types/openapi/coeiroink";
 import type { TTS } from "./types/tts";
 
-export const speaker = z.object({
-  name: z.string(),
-  UUID: z.string().uuid(),
-  styles: z
-    .object({
-      styleName: z.string(),
-      styleId: z.number(),
-    })
-    .array(),
-});
-export type Speaker = z.infer<typeof speaker>;
-
-export type ApiSpeakerResponse =
-  paths["/v1/speakers"]["get"]["responses"]["200"]["content"]["application/json"];
+export type Speaker = components["schemas"]["Speaker"];
 
 export class Coeiroink implements TTS<Speaker> {
   private client: Client<paths, `${string}/${string}`>;
@@ -38,8 +24,8 @@ export class Coeiroink implements TTS<Speaker> {
         "Content-Type": "application/json",
       },
       body: {
-        speakerUuid: this.speaker.UUID,
-        styleId: this.speaker.styles[style].styleId,
+        speakerUuid: this.speaker.speaker_uuid,
+        styleId: this.speaker.styles[style].id,
         text: text,
         speedScale: 1.0,
         volumeScale: 1.0,
@@ -55,53 +41,34 @@ export class Coeiroink implements TTS<Speaker> {
       },
     });
 
-    if (error) {
+    if (error || !data) {
       console.error(`COEIROINK speak Error: ${error}`);
       throw error;
     }
 
-    if (data) {
-      const buffer = Buffer.from(data);
-      return buffer;
-    }
-
-    throw new Error(
-      "Unexpected API response: both data and error are undefined",
-    );
+    const buffer = Buffer.from(data);
+    return buffer;
   }
 
   async getSpeakers(): Promise<Speaker[]> {
     const { data, error } = await this.client.GET("/v1/speakers");
 
-    if (error) {
+    if (error || !data) {
       console.error(`COEIROINK getSpeakers Error: ${error}`);
       throw error;
     }
 
-    if (data) {
-      // APIレスポンスを既存の型にマッピング
-      const apiData: ApiSpeakerResponse = data;
-      const mappedData = apiData.map((apiSpeaker) => ({
-        name: apiSpeaker.speakerName,
-        UUID: apiSpeaker.speakerUuid,
-        styles: apiSpeaker.styles.map((style) => ({
-          styleName: style.styleName,
-          styleId: style.styleId,
-        })),
-      }));
+    const mapped: Speaker[] = data.map((res) => ({
+      speaker_uuid: res.speakerUuid,
+      name: res.speakerName,
+      styles: res.styles.map((style) => ({
+        id: style.styleId,
+        name: style.styleName,
+      })),
+      version: res.version,
+    }));
 
-      const response = z.array(speaker).safeParse(mappedData);
-      if (!response.success) {
-        console.error(`COEIROINK getSpeakers Error: ${response.error}`);
-        throw response.error;
-      }
-
-      return response.data;
-    }
-
-    throw new Error(
-      "Unexpected API response: both data and error are undefined",
-    );
+    return mapped;
   }
 
   setSpeaker(speaker: Speaker): void {
