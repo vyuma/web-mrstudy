@@ -8,7 +8,7 @@ import type {
   SpeechRecognitionErrorEvent,
   SpeechRecognitionEvent,
   SupportedLanguage,
-} from "./types/sst";
+} from "./types/stt";
 
 declare global {
   interface Window {

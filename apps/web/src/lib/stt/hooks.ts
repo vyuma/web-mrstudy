@@ -6,7 +6,7 @@ import type {
   SpeechRecognitionError,
   SpeechRecognitionState,
   SupportedLanguage,
-} from "./types/sst";
+} from "./types/stt";
 
 export interface UseSpeechRecognitionOptions {
   language?: SupportedLanguage;

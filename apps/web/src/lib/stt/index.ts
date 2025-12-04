@@ -18,4 +18,4 @@ export type {
   SpeechRecognitionResultList,
   SpeechRecognitionState,
   SupportedLanguage,
-} from "./types/sst";
+} from "./types/stt";
