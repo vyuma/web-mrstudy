@@ -9,7 +9,7 @@ export class Coeiroink implements TTS<Speaker> {
   private client: Client<paths, `${string}/${string}`>;
   private speaker: Speaker | undefined;
 
-  constructor(options: { apiUrl?: string; speaker: Speaker }) {
+  constructor(options: { apiUrl?: string; speaker?: Speaker }) {
     this.client = createClient<paths>({
       baseUrl:
         (options.apiUrl ?? process.env.COEIROINK_API_URL) ||
