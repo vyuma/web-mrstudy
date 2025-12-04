@@ -1,9 +1,9 @@
-export { SpeechRecognitionClient } from "./speech";
 export type {
   UseSpeechRecognitionOptions,
   UseSpeechRecognitionReturn,
 } from "./hooks";
 export { useSpeechRecognition } from "./hooks";
+export { SpeechRecognitionClient } from "./speech";
 export type {
   SpeechRecognition,
   SpeechRecognitionAlternative,
