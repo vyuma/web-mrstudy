@@ -1,4 +1,4 @@
-import VRMViewer from "../components/VRMViewer";
+import VRMViewer from "../components/VRMView";
 
 export default function Home() {
   return (
