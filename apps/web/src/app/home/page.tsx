@@ -7,9 +7,13 @@ import Memory_Icon from "@/components/icon/memory";
 import SettingIcon from "@/components/icon/setting";
 import { Goal } from "@/components/goal";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import TimerCompleteNotification from "@/components/TimerCompleteNotification";
 
 
 export default function Home() {
+  const router = useRouter();
+
   // ① 初期値を「関数」で渡すと、初回マウント時だけ実行される
   const [isStart, setIsStart] = useState<boolean>(() => {
     if (typeof window === "undefined") return true; // SSR 対策
@@ -38,6 +42,17 @@ export default function Home() {
     sessionStorage.removeItem("timerCompleted");
   };
 
+  // チャット画面へ遷移
+  const handleGoToChat = () => {
+    setShowNotification(false);
+    sessionStorage.removeItem("timerCompleted");
+    // goalをsessionStorageに保存してチャット画面で使用
+    if (todayGoal) {
+      sessionStorage.setItem("todayGoal", todayGoal);
+    }
+    router.push("/chat");
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-gray-900/40">
       {/* 背景画像 */}
@@ -64,10 +79,15 @@ export default function Home() {
           <div className="mt-8 flex justify-center gap-6 ">
             <NavigationButton href="chat" label="" variant="chat" icon={<ChatIcon />} />
             <NavigationButton href="memory" label="" variant="memory"icon={<Memory_Icon />} />
-
           </div>
         </div>
-      </div>
 
+      {/* タイマー完了通知モーダル */}
+      <TimerCompleteNotification
+        isOpen={showNotification}
+        onClose={handleCloseNotification}
+        onChat={handleGoToChat}
+      />
+    </div>
   );
 }

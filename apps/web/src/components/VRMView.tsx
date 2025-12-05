@@ -28,7 +28,7 @@ export default function TestPage() {
     renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMapping = THREE.NoToneMapping; // 背景画像をそのまま表示
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -36,7 +36,17 @@ export default function TestPage() {
 
     // ✅ シーン
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf0f0f0);
+
+    // ✅ 背景画像を設定
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load("/images/home.png", (texture) => {
+      // テクスチャをシャープに表示
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.generateMipmaps = false;
+      scene.background = texture;
+    });
 
     // ✅ ライト
     const ambientLight = new THREE.AmbientLight(0xffffff, 2);
@@ -47,15 +57,15 @@ export default function TestPage() {
     dirLight.castShadow = true;
     scene.add(dirLight);
 
-    // ✅ カメラ（アバターが安定して大きく見える位置）
+    // ✅ カメラ（上半身だけが見える位置）
     const camera = new THREE.PerspectiveCamera(
       50,
       SCREEN_WIDTH / SCREEN_HEIGHT,
       0.1,
       20.0
     );
-    camera.position.set(0, 1.2, 2.2); // ✅ マイナス禁止・プラスが正解
-    camera.lookAt(0, 1.2, 0);
+    camera.position.set(0, 1.5, 1.8); // 遠くして頭が真ん中に
+    camera.lookAt(0, 1.5, 0);
 
     // ✅ リサイズ対応（サイズが変わっても崩れない）
     const handleResize = () => {
@@ -81,12 +91,34 @@ export default function TestPage() {
       if (vrmRef.current) {
         const vrm = vrmRef.current;
 
-        // ✅ 上下ゆらゆら
-        vrm.scene.position.y = Math.sin(time * 0.1) * 0.02;
+        // ✅ 上半身だけ揺らす（足は固定）
+        if (vrm.humanoid) {
+          const spine = vrm.humanoid.getRawBoneNode("spine");
+          const chest = vrm.humanoid.getRawBoneNode("chest");
+          const head = vrm.humanoid.getRawBoneNode("head");
+
+          if (spine) {
+            // 背骨を左右にゆっくり揺らす
+            spine.rotation.z = Math.sin(time * 0.8) * 0.03;
+            // 前後にも少し揺らす
+            spine.rotation.x = Math.sin(time * 0.5) * 0.02;
+          }
+
+          if (chest) {
+            // 胸を背骨と逆方向に少し揺らす（自然な動き）
+            chest.rotation.z = Math.sin(time * 0.8 + 0.5) * 0.02;
+          }
+
+          if (head) {
+            // 頭を少し傾ける
+            head.rotation.z = Math.sin(time * 1.2) * 0.02;
+            head.rotation.x = Math.sin(time * 0.6) * 0.015;
+          }
+        }
 
         const baseRotationY = Math.PI; // ✅ 正面向きの基準
 
-        vrm.scene.rotation.y = baseRotationY + Math.sin(time * 0.9) * 0.05;
+        vrm.scene.rotation.y = baseRotationY + Math.sin(time * 0.9) * 0.03;
 
 
             // ✅ あ・い・う・え・お を順番に口パク

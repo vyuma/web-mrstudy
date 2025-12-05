@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 
 const Memory_Icon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg

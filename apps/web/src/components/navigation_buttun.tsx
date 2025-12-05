@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import React from 'react';
+import type React from 'react';
 import Image from "next/image";
 
 type Variant = 'chat' | 'setting' | 'memory' | 'timer' |'back' ; //chat,setthing,memory,timerにボタンを分ける
