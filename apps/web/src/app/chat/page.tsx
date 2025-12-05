@@ -40,6 +40,7 @@ export default function ChatPage() {
   const [selectedStyleIndex, setSelectedStyleIndex] = useState(0);
   const [showSpeakerSelector, setShowSpeakerSelector] = useState(false);
   const [isLoadingSpeakers, setIsLoadingSpeakers] = useState(true);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasGreetedRef = useRef(false);
 
@@ -125,9 +126,11 @@ export default function ChatPage() {
     [selectedSpeaker, selectedStyleIndex, synthesizeSpeech]
   );
 
+  // ユーザー操作後に挨拶を再生
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!selectedSpeaker) return;
+    if (!hasUserInteracted) return;
     if (hasGreetedRef.current) return;
 
     hasGreetedRef.current = true;
@@ -146,7 +149,12 @@ export default function ChatPage() {
     setTimeout(() => {
       speakText(greetingText);
     }, 500);
-  }, [selectedSpeaker, speakText]);
+  }, [selectedSpeaker, speakText, hasUserInteracted]);
+
+  // 開始ボタンクリック時の処理
+  const handleStart = useCallback(() => {
+    setHasUserInteracted(true);
+  }, []);
 
   const handleSend = useCallback(() => {
     const userText = transcript.trim();
@@ -193,6 +201,18 @@ export default function ChatPage() {
       <div className="absolute inset-0 z-0">
         <VRMChat isSpeaking={isSpeaking} />
       </div>
+
+      {/* 開始オーバーレイ - ユーザー操作前に表示 */}
+      {!hasUserInteracted && !isLoadingSpeakers && selectedSpeaker && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30">
+          <button
+            onClick={handleStart}
+            className="px-8 py-4 bg-amber-500 text-white text-xl font-bold rounded-2xl shadow-lg hover:bg-amber-600 transition transform hover:scale-105 active:scale-95"
+          >
+            タップして開始
+          </button>
+        </div>
+      )}
 
       <div className="relative z-10 flex flex-col h-full">
         <div className="p-4 flex items-center gap-2">
