@@ -69,7 +69,7 @@ export default function ChatPage() {
   // 無音検出用のタイマー
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastTranscriptRef = useRef<string>("");
-  const SILENCE_THRESHOLD_MS = 2500; // 3.5秒
+  const SILENCE_THRESHOLD_MS = 3500; // 3.5秒
 
   // スピーカー一覧を取得
   useEffect(() => {
