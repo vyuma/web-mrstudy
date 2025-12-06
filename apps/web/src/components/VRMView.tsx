@@ -185,7 +185,7 @@ export default function TestPage() {
 
     // ✅ VRM 読み込み
     loader.load(
-      "/models/model.vrm", // ✅ public/models/model.vrm
+      "/models/alice.vrm", // ✅ public/models/model.vrm
       (gltf: any) => {
         const vrm = gltf.userData.vrm;
         vrmRef.current = vrm;

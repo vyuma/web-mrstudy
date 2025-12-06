@@ -15,7 +15,7 @@ const VideoPlayer = () => {
                 controls={false}
                 className="absolute w-full h-full object-cover"
             >
-                <source src="/videos/study.mp4" type="video/mp4" />
+                <source src="/videos/study1_1.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
             </video>
             
