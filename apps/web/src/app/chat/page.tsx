@@ -66,6 +66,11 @@ export default function ChatPage() {
     interimResults: true,
   });
 
+  // 無音検出用のタイマー
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTranscriptRef = useRef<string>("");
+  const SILENCE_THRESHOLD_MS = 2500; // 3.5秒
+
   // スピーカー一覧を取得
   useEffect(() => {
     const loadSpeakers = async () => {
@@ -111,10 +116,14 @@ export default function ChatPage() {
           audioRef.current.onended = () => {
             setIsSpeaking(false);
             URL.revokeObjectURL(audioUrl);
+            // 発話終了後に自動でリスニングを開始
+            startListening();
           };
           audioRef.current.onerror = () => {
             setIsSpeaking(false);
             URL.revokeObjectURL(audioUrl);
+            // エラー時も自動でリスニングを開始
+            startListening();
           };
           await audioRef.current.play();
         }
@@ -123,7 +132,7 @@ export default function ChatPage() {
         setIsSpeaking(false);
       }
     },
-    [selectedSpeaker, selectedStyleIndex, synthesizeSpeech]
+    [selectedSpeaker, selectedStyleIndex, synthesizeSpeech, startListening]
   );
 
   // ユーザー操作後に挨拶を再生
@@ -178,6 +187,58 @@ export default function ChatPage() {
       speakText(responseText);
     }, 500);
   }, [transcript, clearTranscript, stopListening, speakText]);
+
+  // 無音検出: transcriptまたはinterimTranscriptが3.5秒間変化しなかったら自動送信
+  useEffect(() => {
+    // リスニング中でない場合、または発話中の場合はタイマーをクリア
+    if (!isListening || isSpeaking) {
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
+      lastTranscriptRef.current = "";
+      return;
+    }
+
+    const currentTranscript = transcript + interimTranscript;
+
+    // transcriptが空の場合はタイマーを開始しない
+    if (!transcript.trim()) {
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
+      lastTranscriptRef.current = currentTranscript;
+      return;
+    }
+
+    // transcriptが変化した場合、タイマーをリセットして再開始
+    if (currentTranscript !== lastTranscriptRef.current) {
+      lastTranscriptRef.current = currentTranscript;
+
+      // 既存のタイマーをクリア
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
+    }
+
+    // タイマーが動いていない場合は開始
+    if (!silenceTimerRef.current && transcript.trim()) {
+      silenceTimerRef.current = setTimeout(() => {
+        // 3.5秒間変化がなかった場合、自動送信
+        handleSend();
+        silenceTimerRef.current = null;
+      }, SILENCE_THRESHOLD_MS);
+    }
+
+    return () => {
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
+    };
+  }, [transcript, interimTranscript, isListening, isSpeaking, handleSend]);
 
   const handleBack = () => {
     sessionStorage.removeItem("todayGoal");
@@ -347,26 +408,27 @@ export default function ChatPage() {
           )}
 
           <div className="flex items-center gap-3 bg-white/90 p-3 rounded-2xl shadow-lg">
-            <button
-              onClick={isListening ? stopListening : startListening}
-              disabled={!isSupported || isSpeaking || !selectedSpeaker}
-              className={`p-4 rounded-full transition ${
+            {/* リスニング状態のインジケーター */}
+            <div
+              className={`p-3 rounded-full ${
                 isListening
-                  ? "bg-red-500 text-white animate-pulse"
-                  : "bg-amber-500 text-white hover:bg-amber-600"
-              } ${(!isSupported || isSpeaking || !selectedSpeaker) && "opacity-50 cursor-not-allowed"}`}
+                  ? "bg-red-500 animate-pulse"
+                  : isSpeaking
+                    ? "bg-amber-500"
+                    : "bg-gray-300"
+              }`}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
-                fill="currentColor"
+                fill="white"
               >
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
               </svg>
-            </button>
+            </div>
 
             <div className="flex-1 text-gray-600 text-sm">
               {isLoadingSpeakers
@@ -375,13 +437,14 @@ export default function ChatPage() {
                   ? "COEIROINKに接続できません"
                   : !selectedSpeaker
                     ? "スピーカーを選択してください"
-                    : isListening
-                      ? "話しかけてね..."
-                      : isSpeaking
-                        ? "話し中..."
-                        : "マイクボタンを押して話しかけてね"}
+                    : isSpeaking
+                      ? "話し中..."
+                      : isListening
+                        ? "話しかけてね..."
+                        : "準備中..."}
             </div>
 
+            {/* 送信ボタン */}
             <button
               onClick={handleSend}
               disabled={!transcript.trim() || isSpeaking || !selectedSpeaker}
