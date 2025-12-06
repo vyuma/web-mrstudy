@@ -25,7 +25,7 @@ export const aliceAgent = new Agent({
   tools: {},
   memory: new Memory({
     storage: new LibSQLStore({
-      url: "file:./db/mastra.db", // path is relative to the .mastra/output directory
+      url: ":memory:", // Use in-memory storage for development
     }),
   }),
 });

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import VRMChat from "@/components/VRMChat";
 import { useSpeechRecognition } from "@/lib/sst";
 import BackIcon from "@/components/icon/back";
-import { useCoeiroink, type Speaker } from "@/lib/tts/useCoeiroink";
+//import { useCoeiroink, type Speaker } from "@/lib/tts/useCoeiroink";
+import { useVoicevox, type Speaker} from "@lib/tts/useVoicevox";
 
 const RESPONSES = {
   greeting: [
@@ -28,6 +29,7 @@ const RESPONSES = {
 type Message = {
   role: "user" | "assistant";
   content: string;
+  timestamp: string;
 };
 
 export default function ChatPage() {
@@ -50,7 +52,7 @@ export default function ChatPage() {
     error: speakerError,
     getSpeakers,
     synthesizeSpeech,
-  } = useCoeiroink();
+  } = useVoicevox();
 
   const {
     isListening,
@@ -153,7 +155,11 @@ export default function ChatPage() {
       ? "お疲れさま！今日の目標は「" + savedGoal + "」だったね。頑張ったね！"
       : "お疲れさま！今日も頑張ったね！";
 
-    setMessages([{ role: "assistant", content: greetingText }]);
+    setMessages([{
+      role: "assistant",
+      content: greetingText,
+      timestamp: new Date().toISOString()
+    }]);
 
     setTimeout(() => {
       speakText(greetingText);
@@ -165,28 +171,67 @@ export default function ChatPage() {
     setHasUserInteracted(true);
   }, []);
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     const userText = transcript.trim();
     if (!userText) return;
 
-    setMessages((prev) => [...prev, { role: "user", content: userText }]);
+    // Add user message with timestamp
+    const userMessage: Message = {
+      role: "user",
+      content: userText,
+      timestamp: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
     clearTranscript();
     stopListening();
+    setIsSpeaking(true); // Show loading state
 
-    const responseCategories = Object.values(RESPONSES);
-    const randomCategory =
-      responseCategories[Math.floor(Math.random() * responseCategories.length)];
-    const responseText =
-      randomCategory[Math.floor(Math.random() * randomCategory.length)];
+    try {
+      // Call API route
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userText,
+          conversationHistory: messages,
+        }),
+      });
 
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: responseText },
-      ]);
-      speakText(responseText);
-    }, 500);
-  }, [transcript, clearTranscript, stopListening, speakText]);
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const assistantMessage: Message = {
+          role: "assistant",
+          content: result.data.response,
+          timestamp: new Date().toISOString(),
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+
+        // Trigger TTS
+        speakText(result.data.response);
+      } else {
+        // Handle error
+        const errorMessage: Message = {
+          role: "assistant",
+          content: result.error || "エラーが発生しました。もう一度お試しください。",
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+        setIsSpeaking(false);
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMessage: Message = {
+        role: "assistant",
+        content: "接続エラーが発生しました。再度お試しください。",
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+      setIsSpeaking(false);
+    }
+  }, [transcript, messages, clearTranscript, stopListening, speakText]);
 
   // 無音検出: transcriptまたはinterimTranscriptが3.5秒間変化しなかったら自動送信
   useEffect(() => {

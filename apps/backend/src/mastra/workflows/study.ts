@@ -21,12 +21,12 @@ export type NextAction = z.infer<typeof nextAction>;
 /**
  * Workflow input schema
  */
-const studyWorkflowInputSchema = z.object({
+export const studyWorkflowInputSchema = z.object({
 	message: z.string().describe("User's teaching message"),
 	conversationHistory: z
 		.array(
 			z.object({
-				role: z.enum(["user", "alice"]),
+				role: z.enum(["user", "assistant"]),
 				content: z.string(),
 				timestamp: z.string().datetime(),
 			}),
@@ -86,7 +86,7 @@ const learningExtractionSchema = z.object({
 /**
  * Final workflow output schema
  */
-const workflowOutputSchema = z.object({
+export const workflowOutputSchema = z.object({
 	action: nextAction,
 	response: z.string(),
 	metadata: z.object({
@@ -123,7 +123,7 @@ const analyzeNextAction = createStep({
 		conversationHistory: z
 			.array(
 				z.object({
-					role: z.enum(["user", "alice"]),
+					role: z.enum(["user", "assistant"]),
 					content: z.string(),
 					timestamp: z.string().datetime(),
 				}),
