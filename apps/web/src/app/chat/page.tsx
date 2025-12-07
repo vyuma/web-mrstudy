@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import VRMChat from "@/components/VRMChat";
-import { useSpeechRecognition } from "@/lib/sst";
+import { useSpeechRecognition } from "@/lib/stt";
 import BackIcon from "@/components/icon/back";
-//import { useCoeiroink, type Speaker } from "@/lib/tts/useCoeiroink";
-import { useVoicevox, type Speaker} from "@lib/tts/useVoicevox";
+import { useCoeiroink, type Speaker } from "@/lib/tts/useCoeiroink";
+//import { useVoicevox, type Speaker} from "@lib/tts/useVoicevox";
 
 const RESPONSES = {
   greeting: [
@@ -52,7 +52,7 @@ export default function ChatPage() {
     error: speakerError,
     getSpeakers,
     synthesizeSpeech,
-  } = useVoicevox();
+  } = useCoeiroink();
 
   const {
     isListening,
@@ -102,7 +102,7 @@ export default function ChatPage() {
         const audioBlob = await synthesizeSpeech(
           text,
           selectedSpeaker.speaker_uuid,
-          styleId
+          styleId,
         );
 
         if (!audioBlob) {
@@ -134,7 +134,7 @@ export default function ChatPage() {
         setIsSpeaking(false);
       }
     },
-    [selectedSpeaker, selectedStyleIndex, synthesizeSpeech, startListening]
+    [selectedSpeaker, selectedStyleIndex, synthesizeSpeech, startListening],
   );
 
   // ユーザー操作後に挨拶を再生
@@ -155,11 +155,13 @@ export default function ChatPage() {
       ? "お疲れさま！今日の目標は「" + savedGoal + "」だったね。頑張ったね！"
       : "お疲れさま！今日も頑張ったね！";
 
-    setMessages([{
-      role: "assistant",
-      content: greetingText,
-      timestamp: new Date().toISOString()
-    }]);
+    setMessages([
+      {
+        role: "assistant",
+        content: greetingText,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
 
     setTimeout(() => {
       speakText(greetingText);
@@ -189,9 +191,9 @@ export default function ChatPage() {
 
     try {
       // Call API route
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userText,
           conversationHistory: messages,
@@ -215,14 +217,15 @@ export default function ChatPage() {
         // Handle error
         const errorMessage: Message = {
           role: "assistant",
-          content: result.error || "エラーが発生しました。もう一度お試しください。",
+          content:
+            result.error || "エラーが発生しました。もう一度お試しください。",
           timestamp: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, errorMessage]);
         setIsSpeaking(false);
       }
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error("Chat error:", error);
       const errorMessage: Message = {
         role: "assistant",
         content: "接続エラーが発生しました。再度お試しください。",
