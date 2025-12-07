@@ -121,43 +121,43 @@ export default function TestPage() {
         vrm.scene.rotation.y = baseRotationY + Math.sin(time * 0.9) * 0.03;
 
 
-            // ✅ あ・い・う・え・お を順番に口パク
-      if (vrm.expressionManager) {
-        const speed = 4; // ← 数字を大きくすると早口になる
-        const t = time * speed;
+        // ✅ あ・い・う・え・お を順番に口パク
+        if (vrm.expressionManager) {
+          const speed = 4; // ← 数字を大きくすると早口になる
+          const t = time * speed;
 
-        const open = Math.abs(Math.sin(t)); // 口の開き具合 0〜1
+          const open = Math.abs(Math.sin(t)); // 口の開き具合 0〜1
 
-        // いったん全部リセット
-        vrm.expressionManager.setValue("aa", 0);
-        vrm.expressionManager.setValue("ih", 0);
-        vrm.expressionManager.setValue("ou", 0);
-        vrm.expressionManager.setValue("ee", 0);
-        vrm.expressionManager.setValue("oh", 0);
+          // いったん全部リセット
+          vrm.expressionManager.setValue("aa", 0);
+          vrm.expressionManager.setValue("ih", 0);
+          vrm.expressionManager.setValue("ou", 0);
+          vrm.expressionManager.setValue("ee", 0);
+          vrm.expressionManager.setValue("oh", 0);
 
-        // どの母音にするかを時間で切り替え
-        const vowelIndex = Math.floor(t) % 5;
+          // どの母音にするかを時間で切り替え
+          const vowelIndex = Math.floor(t) % 5;
 
-        switch (vowelIndex) {
-          case 0: // あ
-            vrm.expressionManager.setValue("aa", open);
-            break;
-          case 1: // い
-            vrm.expressionManager.setValue("ih", open);
-            break;
-          case 2: // う
-            vrm.expressionManager.setValue("ou", open);
-            break;
-          case 3: // え
-            vrm.expressionManager.setValue("ee", open);
-            break;
-          case 4: // お
-            vrm.expressionManager.setValue("oh", open);
-            break;
+          switch (vowelIndex) {
+            case 0: // あ
+              vrm.expressionManager.setValue("aa", open);
+              break;
+            case 1: // い
+              vrm.expressionManager.setValue("ih", open);
+              break;
+            case 2: // う
+              vrm.expressionManager.setValue("ou", open);
+              break;
+            case 3: // え
+              vrm.expressionManager.setValue("ee", open);
+              break;
+            case 4: // お
+              vrm.expressionManager.setValue("oh", open);
+              break;
+          }
+
+          vrm.expressionManager.update();
         }
-
-        vrm.expressionManager.update();
-      }
 
 
         // ✅ 瞬き
@@ -185,7 +185,7 @@ export default function TestPage() {
 
     // ✅ VRM 読み込み
     loader.load(
-      "/models/model.vrm", // ✅ public/models/model.vrm
+      "/models/alice.vrm", // ✅ public/models/alice.vrm
       (gltf: any) => {
         const vrm = gltf.userData.vrm;
         vrmRef.current = vrm;
@@ -205,26 +205,26 @@ export default function TestPage() {
         if (vrm.humanoid) {
           const rightUpperArm = vrm.humanoid.getRawBoneNode("rightUpperArm");
           const rightLowerArm = vrm.humanoid.getRawBoneNode("rightLowerArm");
-          const rightHand     = vrm.humanoid.getRawBoneNode("rightHand");
+          const rightHand = vrm.humanoid.getRawBoneNode("rightHand");
           if (rightUpperArm && rightLowerArm) {
             rightUpperArm.rotation.z = -1.3;
             rightUpperArm.rotation.x = 0.1;
             rightLowerArm.rotation.x = 0.1;
 
-            rightHand.rotation.y = 0.1;      
-            rightHand.rotation.z = 0.01; 
+            rightHand.rotation.y = 0.1;
+            rightHand.rotation.z = 0.01;
           }
 
           const leftUpperArm = vrm.humanoid.getRawBoneNode("leftUpperArm");
           const leftLowerArm = vrm.humanoid.getRawBoneNode("leftLowerArm");
-          const leftHand     = vrm.humanoid.getRawBoneNode("leftHand");
+          const leftHand = vrm.humanoid.getRawBoneNode("leftHand");
           if (leftUpperArm && leftLowerArm) {
             leftUpperArm.rotation.z = 1.3;
             leftUpperArm.rotation.x = 0.1;
             leftLowerArm.rotation.x = 0.5;
 
-            leftHand.rotation.y = 0.1;      
-            leftHand.rotation.z = 0.1; 
+            leftHand.rotation.y = 0.1;
+            leftHand.rotation.z = 0.1;
           }
         }
 
