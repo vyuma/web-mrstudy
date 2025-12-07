@@ -5,7 +5,7 @@ import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 
 const Timer = () => {
-  const totalTime = 25 * 60; // 25分
+  const totalTime = 2 * 60; // 25分
   const [timeLeft, setTimeLeft] = useState(totalTime);
   const [isRunning, setIsRunning] = useState(true);
   const router = useRouter(); // ← 追
