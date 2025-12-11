@@ -3,27 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import VRMChat from "@/components/VRMChat";
-import { useSpeechRecognition } from "@/lib/sst";
+import { useSpeechRecognition } from "@/lib/stt";
 import BackIcon from "@/components/icon/back";
 import { useCoeiroink, type Speaker } from "@/lib/tts/useCoeiroink";
 
-const RESPONSES = {
-  greeting: [
-    "お疲れさま！今日も頑張ったね！",
-    "えらい！集中できたね！",
-    "すごいね！私も嬉しいよ！",
-  ],
-  encouragement: [
-    "次も一緒に頑張ろうね！",
-    "また会えるの楽しみにしてるね！",
-    "いつでも話しかけてね！",
-  ],
-  question: [
-    "どうだった？集中できた？",
-    "疲れてない？大丈夫？",
-    "休憩も大事だよ！",
-  ],
-};
 
 type Message = {
   role: "user" | "assistant";
@@ -69,7 +52,7 @@ export default function ChatPage() {
   // 無音検出用のタイマー
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastTranscriptRef = useRef<string>("");
-  const SILENCE_THRESHOLD_MS = 3500; // 3.5秒
+  const SILENCE_THRESHOLD_MS = 2500; // 3.5秒
 
   // スピーカー一覧を取得
   useEffect(() => {
@@ -165,28 +148,56 @@ export default function ChatPage() {
     setHasUserInteracted(true);
   }, []);
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     const userText = transcript.trim();
     if (!userText) return;
 
-    setMessages((prev) => [...prev, { role: "user", content: userText }]);
+    const newUserMessage: Message = { role: "user", content: userText };
+    setMessages((prev) => [...prev, newUserMessage]);
     clearTranscript();
     stopListening();
 
-    const responseCategories = Object.values(RESPONSES);
-    const randomCategory =
-      responseCategories[Math.floor(Math.random() * responseCategories.length)];
-    const responseText =
-      randomCategory[Math.floor(Math.random() * randomCategory.length)];
+    try {
+      // 目標を取得
+      const goal = sessionStorage.getItem("todayGoal") || undefined;
 
-    setTimeout(() => {
+      // APIを呼び出してAI応答を取得
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [...messages, newUserMessage],
+          goal,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("API Error:", response.status, errorData);
+        throw new Error(`API request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const responseText = data.content;
+
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: responseText },
       ]);
       speakText(responseText);
-    }, 500);
-  }, [transcript, clearTranscript, stopListening, speakText]);
+    } catch (error) {
+      console.error("Chat API Error:", error);
+      // エラー時はフォールバックメッセージ
+      const fallbackText = "ごめんね、うまく聞き取れなかったみたい。もう一度言ってくれる？";
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: fallbackText },
+      ]);
+      speakText(fallbackText);
+    }
+  }, [transcript, clearTranscript, stopListening, speakText, messages]);
 
   // 無音検出: transcriptまたはinterimTranscriptが3.5秒間変化しなかったら自動送信
   useEffect(() => {
