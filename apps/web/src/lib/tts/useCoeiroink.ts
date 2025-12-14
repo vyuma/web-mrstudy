@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
-import { Coeiroink, type Speaker } from "./coeiroink";
+import { useState, useCallback } from "react";
+import type { Speaker } from "./coeiroink";
 
 export type { Speaker };
 
@@ -10,14 +10,16 @@ export function useCoeiroink() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const clientRef = useRef<Coeiroink>(new Coeiroink({}));
-
   const getSpeakers = useCallback(async (): Promise<Speaker[]> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const speakerList = await clientRef.current.getSpeakers();
+      const response = await fetch("/api/coeiroink/speakers");
+      if (!response.ok) {
+        throw new Error(`Failed to fetch speakers: ${response.status}`);
+      }
+      const speakerList: Speaker[] = await response.json();
       setSpeakers(speakerList);
       return speakerList;
     } catch (err) {
@@ -37,22 +39,33 @@ export function useCoeiroink() {
       styleId: number
     ): Promise<Blob | null> => {
       try {
-        // スピーカーを設定
         const speaker = speakers.find((s) => s.speaker_uuid === speakerUuid);
         if (!speaker) {
           throw new Error(`Speaker not found: ${speakerUuid}`);
         }
 
-        clientRef.current.setSpeaker(speaker);
-
-        // styleIdからstyleIndexを取得
         const styleIndex = speaker.styles.findIndex((s) => s.id === styleId);
         if (styleIndex === -1) {
           throw new Error(`Style not found: ${styleId}`);
         }
 
-        const buffer = await clientRef.current.speak(text, styleIndex);
-        return new Blob([new Uint8Array(buffer)], { type: "audio/wav" });
+        const response = await fetch("/api/coeiroink/synthesis", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text,
+            speaker,
+            styleIndex,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Synthesis failed: ${response.status}`);
+        }
+
+        return await response.blob();
       } catch (err) {
         console.error("TTS synthesis error:", err);
         return null;
